@@ -3,7 +3,7 @@
 }
 body {
   background: linear-gradient(135deg, #07131f 0%, #13253c 100%);
-  color: #f6f8fc;
+  color: #f8fbff;
   min-height: 100vh;
 }
 .admin-shell {
@@ -125,11 +125,13 @@ body {
 .auth-card-head h1 {
   font-size: clamp(1.45rem, 3.4vw, 1.95rem);
   margin-bottom: 6px;
-  color: #fff;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 .auth-card-head p {
-  color: rgba(255,255,255,0.72);
+  color: rgba(248,251,255,0.88);
   font-size: 0.95rem;
+  font-weight: 500;
 }
 .auth-view {
   display: grid;
@@ -141,8 +143,9 @@ body {
 }
 .auth-field span {
   font-size: 0.82rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.74);
+  font-weight: 700;
+  color: rgba(248,251,255,0.96);
+  letter-spacing: 0.01em;
 }
 .auth-card input,
 .auth-card select {
@@ -196,24 +199,27 @@ body {
   gap: 8px;
   margin-top: 4px;
   font-size: 0.9rem;
-  color: rgba(255,255,255,0.7);
-}
-.auth-switch-row a {
-  color: #f2c96b;
-  text-decoration: none;
+  color: rgba(248,251,255,0.92);
   font-weight: 600;
 }
-.auth-switch-row a:hover {
+.auth-switch-row a {
   color: #ffd36b;
+  text-decoration: none;
+  font-weight: 700;
+}
+.auth-switch-row a:hover {
+  color: #ffe8a3;
 }
 .auth-message {
   min-height: 1.2rem;
   margin-top: 6px;
-  color: #9be3c9;
+  color: #bff6e2;
   font-size: 0.88rem;
+  font-weight: 600;
 }
 .auth-message.error {
-  color: #ffb3b3;
+  color: #ffd2d2;
+  font-weight: 700;
 }
 @media (max-width: 880px) {
   .admin-grid { grid-template-columns: 1fr; }
