@@ -24,6 +24,46 @@ body {
   padding: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.16);
 }
+.admin-card h3,
+.admin-card h4,
+.admin-list-card h3,
+.admin-detail-card h3,
+.admin-list-card h4,
+.admin-detail-card h4 {
+  color: var(--gold);
+}
+.auth-card h2 {
+  color: var(--gold);
+}
+.auth-card h3,
+.auth-card h4 {
+  color: #f8fbff;
+}
+.admin-card input,
+.admin-card select {
+  width: 100%;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.admin-card input::placeholder {
+  color: rgba(255,255,255,0.55);
+}
+.admin-card select option {
+  color: #111827;
+  background: #ffffff;
+}
+.admin-card input:focus,
+.admin-card select:focus {
+  border-color: rgba(232,184,75,0.72);
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-1px);
+}
 .admin-list-card {
   padding: 0;
   overflow: hidden;
