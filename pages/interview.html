@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interview Simulation - BISU AI Interview System</title>
+  <link rel="icon" type="image/png" href="../assets/Bohol_Island_State_University.png" />
+  <link rel="stylesheet" href="../css/global.css"/>
+  <link rel="stylesheet" href="../css/interview.css"/>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="../index.html">
+      <div class="brand-logo"><img src="../assets/Bohol_Island_State_University.png" alt="BISU logo" /></div>
+      <div class="brand-text">
+        <span class="brand-name">BISU Clarin</span>
+        <span class="brand-sub">Study Prototype</span>
+      </div>
+    </a>
+    <div class="flex items-center gap-12">
+      <span style="font-family:var(--font-mono);font-size:0.8rem;color:rgba(255,255,255,0.55)">Session <span id="session-timer">00:00</span></span>
+      <div class="header-badge">INTERVIEW MODE</div>
+    </div>
+  </div>
+</header>
+<div class="step-bar"><div class="container"><div class="step-item"><div class="step-dot active">1</div><span class="step-label active">Interview</span></div><div class="step-line"></div><div class="step-item"><div class="step-dot">2</div><span class="step-label">Analysis</span></div><div class="step-line"></div><div class="step-item"><div class="step-dot">3</div><span class="step-label">Results</span></div></div></div>
+<section class="interview-hero"><div class="container"><div class="fade-up"><div class="hero-eyebrow">BISU Clarin Interview Simulation</div><h1 class="hero-title">Share Your <span>Interview Responses</span></h1><p class="hero-sub">This study prototype collects your spoken or typed answers, identifies your skills, and matches you to suitable entry-level job opportunities.</p><div class="hero-stats"><div class="hero-stat fade-up fade-up-1"><span class="hero-stat-icon">Q</span><div><div class="hero-stat-val">6</div><div class="hero-stat-lab">Questions</div></div></div><div class="hero-stat fade-up fade-up-2"><span class="hero-stat-icon">NLP</span><div><div class="hero-stat-val">3</div><div class="hero-stat-lab">Models</div></div></div><div class="hero-stat fade-up fade-up-3"><span class="hero-stat-icon">JM</span><div><div class="hero-stat-val">5</div><div class="hero-stat-lab">Job Matches</div></div></div><div class="hero-stat fade-up fade-up-4"><span class="hero-stat-icon">FR</span><div><div class="hero-stat-val">MA/CR</div><div class="hero-stat-lab">Study Metrics</div></div></div></div></div></div></section>
+<main class="interview-main"><div class="container"><div class="interview-layout"><div><div id="mic-banner" class="mic-permission-banner"><div class="perm-icon">!</div><div class="perm-text">Microphone access required.</div></div><div class="card fade-up" id="interview-card" style="margin-bottom:18px;"><div class="q-header-bar"><div class="q-meta"><span id="q-number" class="q-number">Question 1 of 6</span><span id="q-category" class="q-cat-badge cat-general">General</span></div></div><p id="q-text" class="q-text"></p><p id="q-hint" style="font-size:0.8rem;color:rgba(255,255,255,0.45);padding:10px 24px 0;"></p>
+  <div class="voice-section">
+    <div class="mic-btn-wrap">
+      <div class="mic-ripple r1"></div>
+      <div class="mic-ripple r2"></div>
+      <div class="mic-ripple r3"></div>
+      <button id="mic-btn" class="mic-btn-outer" onclick="toggleRecording()" title="Click to record or stop"><span class="mic-icon">Mic</span></button>
+    </div>
+
+    <div id="interviewer-avatar" class="interviewer-avatar" aria-hidden="true">
+      <video id="interviewer-video" preload="auto" muted playsinline loop style="display:none"></video>
+      <div class="avatar-fallback">
+        <svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" width="140" height="140" role="img">
+          <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#f5c26b"/><stop offset="1" stop-color="#e6a64a"/></linearGradient></defs>
+          <circle cx="110" cy="80" r="56" fill="url(#g1)" />
+          <rect x="62" y="130" width="96" height="62" rx="24" fill="#2b3b4a" />
+          <circle cx="92" cy="76" r="6" fill="#222" />
+          <circle cx="128" cy="76" r="6" fill="#222" />
+          <g id="mouth" transform="translate(80,102)"><ellipse cx="30" cy="18" rx="22" ry="8" fill="#2b3b4a" /></g>
+        </svg>
+      </div>
+    </div>
+
+    <div id="confirm-hint" class="confirm-hint" style="display:none">Is that it?</div>
+    <div id="interviewer-bubble" class="interviewer-bubble">Let’s begin.</div>
+
+    <div id="rec-status" class="rec-status idle">Use the microphone or type your answer below</div>
+    <div id="waveform" class="waveform-wrap"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div>
+    <div id="rec-timer" class="rec-timer">00:00</div>
+    <div id="transcript-box" class="transcript-box" style="width:100%;"><div class="transcript-label"><span id="live-dot" class="transcript-live-dot"></span>Captured Answer</div><div id="transcript-text" class="placeholder">Your recorded or typed answer will appear here.</div><div id="word-count" class="transcript-word-count"></div></div>
+    <div style="width:100%;margin-top:14px;"><label for="typed-answer" style="display:block;font-size:0.8rem;color:rgba(255,255,255,0.68);margin-bottom:8px;">Manual response field for the study prototype</label><textarea id="typed-answer" rows="5" style="width:100%;border-radius:14px;border:1px solid rgba(255,255,255,0.14);background:rgba(8,18,30,0.55);color:#fff;padding:14px 16px;font:inherit;resize:vertical;" placeholder="Type your answer here if voice capture is unavailable or if you want to edit your response."></textarea><div class="flex gap-8" style="margin-top:10px;flex-wrap:wrap;"><button class="btn btn-secondary btn-sm" onclick="saveTypedAnswer()">Save typed answer</button><button class="btn btn-secondary btn-sm" onclick="clearCurrentAnswer()">Clear current answer</button></div></div>
+    <div class="nav-row" style="width:100%;margin-top:16px;"><div class="nav-row-left"><button class="btn btn-secondary btn-sm" onclick="skipQuestion()">Skip</button></div><div class="nav-row-right"><button id="btn-prev" class="btn btn-secondary" onclick="prevQuestion()" disabled>Prev</button><button id="btn-next" class="btn btn-navy" onclick="nextQuestion()">Next</button></div></div>
+  </div>
+</div>
+<div id="q-dots" class="q-dots-row fade-up fade-up-1"></div><div class="submit-banner card fade-up fade-up-2"><div class="sb-text"><h3>Ready for job matching analysis?</h3><p>The system will compare your interview responses across the study's NLP models and generate suitable job recommendations.</p></div><div class="flex gap-8" style="flex-wrap:wrap;"><button class="btn btn-secondary" onclick="window.scrollTo({top:0,behavior:'smooth'})">Review</button><button class="btn btn-primary btn-lg" onclick="submitInterview()">Analyze and Match</button></div></div></div><aside class="sidebar"><div class="card fade-up"><div class="card-header"><div class="card-icon">PR</div><div><h3>Progress</h3><p style="font-size:0.78rem;margin:0">Interview items answered</p></div></div><div class="card-body"><div class="progress-ring-wrap"><div class="progress-ring"><svg viewBox="0 0 96 96" width="96" height="96"><circle class="pr-track" cx="48" cy="48" r="43"/><circle class="pr-fill" cx="48" cy="48" r="43"/></svg><div class="pr-text"><div id="pr-pct" class="pr-pct">0%</div><div class="pr-lbl">done</div></div></div></div><div class="p-stats"><div class="p-stat"><div id="answered-count" class="p-stat-val">0</div><div class="p-stat-lab">Answered</div></div><div class="p-stat"><div id="remaining-count" class="p-stat-val">6</div><div class="p-stat-lab">Remaining</div></div></div></div></div><div class="card fade-up fade-up-1"><div class="card-header"><div class="card-icon">HT</div><div><h3>How to Answer</h3></div></div><div class="card-body"><div class="tip-item"><div class="tip-icon">1</div><div class="tip-text"><strong>Use the microphone</strong> if supported by your browser, or type your answer in the manual field.</div></div><div class="tip-item"><div class="tip-icon">2</div><div class="tip-text"><strong>Answer based on real experience</strong> from class projects, thesis work, immersion, or organizational activities.</div></div><div class="tip-item"><div class="tip-icon">3</div><div class="tip-text"><strong>Save each response</strong> so it can be used for skill extraction and job matching.</div></div><div class="tip-item"><div class="tip-icon">4</div><div class="tip-text"><strong>Review your captured answer</strong>, then move to the next interview item.</div></div><div class="tip-item"><div class="tip-icon">5</div><div class="tip-text">The study evaluates Matching Accuracy, Fallback Rate, Containment Rate, and respondent satisfaction.</div></div></div></div><div class="card q-list-card fade-up fade-up-2"><div class="card-header"><div class="card-icon">QL</div><div><h3>All Questions</h3></div></div><div class="card-body" style="padding-top:10px;"><div id="q-list"></div></div></div></aside></div></div></main>
+<div id="toast" class="toast"></div>
+<script src="../js/interview.js"></script>
+</body>
+</html>

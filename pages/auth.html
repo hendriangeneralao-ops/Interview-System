@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Started - BISU Interview System</title>
+  <link rel="icon" type="image/png" href="../assets/Bohol_Island_State_University.png" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="../index.html">
+      <div class="brand-logo"><img src="../assets/Bohol_Island_State_University.png" alt="BISU logo" /></div>
+      <div class="brand-text">
+        <span class="brand-name">BISU Clarin</span>
+        <span class="brand-sub">Get Started</span>
+      </div>
+    </a>
+    <div class="header-badge">ACCOUNT ACCESS</div>
+  </div>
+</header>
+<main class="admin-shell">
+  <div class="container">
+    <div class="auth-card">
+      <div id="login-view">
+        <h2 style="margin-bottom:8px;">Login</h2>
+        <p style="color:rgba(255,255,255,0.6);margin-bottom:18px;">Sign in with your BISU email to continue.</p>
+        <input id="login-email" type="email" placeholder="BISU Email" />
+        <input id="login-password" type="password" placeholder="Password" />
+        <button class="btn btn-primary btn-lg" id="login-btn">Login</button>
+        <p style="margin-top:12px;font-size:0.85rem;color:rgba(255,255,255,0.65);">No account yet? <a href="#" id="show-register-link" style="color:#f2c96b;">Register here</a></p>
+        <p id="login-message" style="margin-top:12px;color:#ffb3b3;font-size:0.85rem;"></p>
+      </div>
+
+      <div id="register-view" style="display:none;">
+        <h2 style="margin-bottom:8px;">Register</h2>
+        <p style="color:rgba(255,255,255,0.6);margin-bottom:18px;">Create your student account before starting the interview.</p>
+        <input id="reg-firstname" type="text" placeholder="First Name" />
+        <input id="reg-lastname" type="text" placeholder="Last Name" />
+        <input id="reg-mi" type="text" placeholder="Middle Initial" />
+        <input id="reg-student-id" type="text" placeholder="Student ID" />
+        <select id="reg-program" style="width:100%;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;padding:12px 14px;margin-bottom:12px;">
+          <option value="">Select Program</option>
+          <option>BS Computer Science</option>
+          <option>BS Information Technology</option>
+          <option>BS Mathematics</option>
+          <option>BS Biology</option>
+          <option>BS Accountancy</option>
+        </select>
+        <input id="reg-email" type="email" placeholder="BISU Email" />
+        <input id="reg-password" type="password" placeholder="Password (min 6 characters)" />
+        <input id="reg-section" type="text" placeholder="Section" />
+        <button class="btn btn-primary btn-lg" id="register-btn">Register</button>
+        <p style="margin-top:12px;font-size:0.85rem;color:rgba(255,255,255,0.65);">Already have an account? <a href="#" id="show-login-link" style="color:#f2c96b;">Login here</a></p>
+        <p id="register-message" style="margin-top:12px;color:#ffb3b3;font-size:0.85rem;"></p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import {
+    auth, db,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    doc, setDoc,
+    getUserProfile,
+    redirectForRole,
+    serverTimestamp
+  } from "../firebase/firebase-config.js";
+
+  const $ = id => document.getElementById(id);
+
+  $('show-register-link').addEventListener('click', e => {
+    e.preventDefault();
+    $('login-view').style.display = 'none';
+    $('register-view').style.display = 'block';
+  });
+  $('show-login-link').addEventListener('click', e => {
+    e.preventDefault();
+    $('register-view').style.display = 'none';
+    $('login-view').style.display = 'block';
+  });
+
+  $('register-btn').addEventListener('click', registerUser);
+  $('login-btn').addEventListener('click', loginUser);
+
+  async function registerUser() {
+    const firstName = $('reg-firstname').value.trim();
+    const lastName = $('reg-lastname').value.trim();
+    const middleInitial = $('reg-mi').value.trim();
+    const studentId = $('reg-student-id').value.trim();
+    const program = $('reg-program').value;
+    const email = $('reg-email').value.trim();
+    const password = $('reg-password').value;
+    const section = $('reg-section').value.trim();
+    const msg = $('register-message');
+
+    if (!firstName || !lastName || !studentId || !program || !email || !password) {
+      msg.textContent = 'Please complete all required fields.';
+      return;
+    }
+    if (password.length < 6) {
+      msg.textContent = 'Password must be at least 6 characters.';
+      return;
+    }
+
+    msg.style.color = '#ffb3b3';
+    msg.textContent = 'Creating your account...';
+
+    try {
+      // 1. Create the Auth user (email + password).
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+
+      // 2. Create their /users/{uid} profile doc. Security rules only allow
+      //    role: 'student' here — nobody can self-register as admin.
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        role: 'student',
+        firstName, lastName, middleInitial, studentId, program, section,
+        email,
+        createdAt: serverTimestamp()
+      });
+
+      msg.style.color = '#9be3c9';
+      msg.textContent = 'Registration successful. Redirecting...';
+      setTimeout(() => window.location.href = 'student.html', 600);
+    } catch (err) {
+      msg.style.color = '#ffb3b3';
+      msg.textContent = friendlyAuthError(err);
+    }
+  }
+
+  async function loginUser() {
+    const email = $('login-email').value.trim();
+    const password = $('login-password').value;
+    const msg = $('login-message');
+
+    if (!email || !password) {
+      msg.textContent = 'Please enter your email and password.';
+      return;
+    }
+
+    msg.textContent = 'Signing in...';
+
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const profile = await getUserProfile(cred.user.uid);
+      if (!profile) {
+        msg.textContent = 'No profile found for this account. Contact an admin.';
+        return;
+      }
+      redirectForRole(profile.role);
+    } catch (err) {
+      msg.textContent = friendlyAuthError(err);
+    }
+  }
+
+  function friendlyAuthError(err) {
+    const map = {
+      'auth/email-already-in-use': 'This email is already registered.',
+      'auth/invalid-email': 'That email address looks invalid.',
+      'auth/weak-password': 'Password is too weak (min 6 characters).',
+      'auth/user-not-found': 'Invalid email or password.',
+      'auth/wrong-password': 'Invalid email or password.',
+      'auth/invalid-credential': 'Invalid email or password.'
+    };
+    return map[err.code] || 'Something went wrong. Please try again.';
+  }
+</script>
+</body>
+</html>

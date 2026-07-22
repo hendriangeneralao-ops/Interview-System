@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BISU AI-Assisted Interview System for Job Matching</title>
+  <link rel="icon" type="image/png" href="assets/Bohol_Island_State_University.png" />
+  <link rel="stylesheet" href="css/global.css"/>
+  <style>
+    body { background: var(--navy); }
+    .landing { min-height: 100vh; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+    .landing::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 75% 25%, rgba(232,184,75,0.09) 0%, transparent 50%),
+        radial-gradient(circle at 15% 75%, rgba(29,184,160,0.07) 0%, transparent 45%);
+      pointer-events: none;
+    }
+    .hero-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 60px 24px; position: relative; z-index: 1; }
+    .hero-inner { max-width: 720px; width: 100%; text-align: center; }
+    .univ-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 30px; padding: 7px 18px; margin-bottom: 30px;
+      font-size: 0.78rem; color: rgba(255,255,255,0.7);
+    }
+    .main-title {
+      font-family: var(--font-alt); font-size: clamp(2rem,6vw,3.4rem);
+      font-weight: 800; color: #fff; line-height: 1.15; margin-bottom: 14px;
+    }
+    .main-title .hl { color: var(--gold); }
+    .main-sub { font-size: 1rem; color: rgba(255,255,255,0.68); line-height: 1.75; margin-bottom: 38px; max-width: 620px; margin-left: auto; margin-right: auto; }
+    .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 52px; }
+    .feature-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; text-align: left; }
+    .feat { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 14px; padding: 16px 17px; display: flex; gap: 10px; }
+    .fi { font-size: 1rem; font-weight: 800; flex-shrink: 0; margin-top: 1px; color: var(--gold); }
+    .ft { font-size: 0.84rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+    .fd { font-size: 0.73rem; color: rgba(255,255,255,0.5); line-height: 1.45; }
+    .voice-deco { display: flex; align-items: center; justify-content: center; gap: 4px; height: 36px; margin-bottom: 20px; }
+    .vd-bar { width: 4px; border-radius: 3px; background: var(--gold); opacity: 0.5; animation: waveBar 1s ease-in-out infinite; }
+    .vd-bar:nth-child(1){ height: 14px; animation-delay: 0s; }
+    .vd-bar:nth-child(2){ height: 26px; animation-delay: 0.1s; }
+    .vd-bar:nth-child(3){ height: 36px; animation-delay: 0.2s; opacity: 0.8; }
+    .vd-bar:nth-child(4){ height: 22px; animation-delay: 0.3s; }
+    .vd-bar:nth-child(5){ height: 36px; animation-delay: 0.15s; opacity: 0.8; }
+    .vd-bar:nth-child(6){ height: 28px; animation-delay: 0.25s; }
+    .vd-bar:nth-child(7){ height: 14px; animation-delay: 0.35s; }
+    .landing-footer { text-align: center; padding: 18px; border-top: 1px solid rgba(255,255,255,0.07); font-size: 0.73rem; color: rgba(255,255,255,0.32); position: relative; z-index: 1; }
+    @media (max-width: 600px) { .feature-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="landing">
+  <header class="site-header" style="position:relative;z-index:2;">
+    <div class="container">
+      <a class="brand" href="#">
+        <div class="brand-logo"><img src="assets/Bohol_Island_State_University.png" alt="BISU logo" /></div>
+        <div class="brand-text">
+          <span class="brand-name">BISU Clarin</span>
+          <span class="brand-sub">RESEARCH STUDY</span>
+        </div>
+      </a>
+      <div class="header-badge">THESIS SYSTEM</div>
+    </div>
+  </header>
+  <div class="hero-body">
+    <div class="hero-inner fade-up">
+      <div class="univ-badge">Bohol Island State University - Clarin Campus · BSCS Thesis 2026</div>
+      <div class="voice-deco">
+        <div class="vd-bar"></div><div class="vd-bar"></div><div class="vd-bar"></div>
+        <div class="vd-bar"></div><div class="vd-bar"></div><div class="vd-bar"></div>
+        <div class="vd-bar"></div>
+      </div>
+      <h1 class="main-title">AI-Assisted <span class="hl">Interview System</span><br/>for Job Matching</h1>
+      <p class="main-sub">A study prototype for BISU Clarin graduating students that simulates interview responses, extracts relevant skills, compares NLP models, and recommends suitable entry-level job opportunities.</p>
+      <div class="cta-row">
+        <a href="pages/auth.html" class="btn btn-primary btn-lg">Get Started</a>
+      </div>
+      <div class="feature-grid" id="features">
+        <div class="feat"><div class="fi">1</div><div><div class="ft">Interview Simulation</div><div class="fd">Graduating students answer common entry-level interview questions through voice or text.</div></div></div>
+        <div class="feat"><div class="fi">2</div><div><div class="ft">Model Comparison</div><div class="fd">The prototype compares all-MiniLM-L6-v2, all-mpnet-base-v2, and DistilBERT for skill extraction.</div></div></div>
+        <div class="feat"><div class="fi">3</div><div><div class="ft">Job Matching</div><div class="fd">Matching Accuracy, Fallback Rate, and Containment Rate are highlighted alongside job recommendations.</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="landing-footer">Hendrian O. Generalao · Yela Jamaela V. Piezas · Jade Ian T. Regidor | College of Science and Management | BSCS |· BISU Clarin · JULY 2026</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Portal - BISU Interview System</title>
+  <link rel="icon" type="image/png" href="../assets/Bohol_Island_State_University.png" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="../index.html">
+      <div class="brand-logo"><img src="../assets/Bohol_Island_State_University.png" alt="BISU logo" /></div>
+      <div class="brand-text">
+        <span class="brand-name">BISU Clarin</span>
+        <span class="brand-sub">Student Portal</span>
+      </div>
+    </a>
+    <div class="flex items-center gap-12">
+      <span id="student-name-badge" style="font-size:0.82rem;color:rgba(255,255,255,0.7);"></span>
+      <button class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+    </div>
+  </div>
+</header>
+<main class="admin-shell">
+  <div class="container">
+    <div class="auth-card" id="loading-view">
+      <p style="color:rgba(255,255,255,0.6);">Checking your session...</p>
+    </div>
+
+    <div class="auth-card" id="upload-view" style="display:none;">
+      <h2 style="margin-bottom:8px;">Upload Your Documents</h2>
+      <p style="color:rgba(255,255,255,0.6);margin-bottom:18px;">Upload your CV and application letter. These are scanned to identify your skills before the interview.</p>
+
+      <label style="display:block;margin:10px 0 6px;font-size:0.8rem;color:rgba(255,255,255,0.7);">Upload CV (PDF or DOCX)</label>
+      <input id="student-cv" type="file" accept=".pdf,.doc,.docx,.txt" />
+
+      <label style="display:block;margin:10px 0 6px;font-size:0.8rem;color:rgba(255,255,255,0.7);">Upload Application Letter (PDF or DOCX)</label>
+      <input id="student-letter" type="file" accept=".pdf,.doc,.docx,.txt" />
+
+      <div id="upload-progress" style="display:none;margin-top:14px;">
+        <div class="main-progress-wrap" style="max-width:none;">
+          <div id="upload-progress-fill" class="main-progress-fill" style="width:0%;"></div>
+        </div>
+        <p id="upload-status-text" style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:6px;"></p>
+      </div>
+
+      <button class="btn btn-primary btn-lg" style="margin-top:14px;" id="continue-btn">Continue to Interview</button>
+      <p id="student-message" style="margin-top:12px;color:#ffb3b3;font-size:0.85rem;"></p>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import {
+    auth, db, storage,
+    onAuthStateChanged, signOut,
+    getUserProfile,
+    doc, setDoc,
+    storageRef, uploadBytes, getDownloadURL
+  } from "../firebase/firebase-config.js";
+
+  const $ = id => document.getElementById(id);
+  let currentUser = null;
+  let currentProfile = null;
+
+  // --- Auth guard: only signed-in students may see this page ---
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "auth.html";
+      return;
+    }
+    const profile = await getUserProfile(user.uid);
+    if (!profile || profile.role !== "student") {
+      // Wrong role for this page (e.g. an admin hit this URL directly).
+      window.location.href = "auth.html";
+      return;
+    }
+    currentUser = user;
+    currentProfile = profile;
+    $("student-name-badge").textContent = `${profile.firstName || ""} ${profile.lastName || ""}`.trim();
+    $("loading-view").style.display = "none";
+    $("upload-view").style.display = "block";
+  });
+
+  $("logout-btn").addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "auth.html";
+  });
+
+  $("continue-btn").addEventListener("click", startStudentSession);
+
+  async function startStudentSession() {
+    const msg = $("student-message");
+    const cvFile = $("student-cv").files[0];
+    const letterFile = $("student-letter").files[0];
+
+    if (!cvFile || !letterFile) {
+      msg.textContent = "Please upload both your CV and application letter.";
+      return;
+    }
+
+    msg.style.color = "#ffb3b3";
+    msg.textContent = "";
+    $("upload-progress").style.display = "block";
+
+    try {
+      setUploadStatus(10, "Uploading CV...");
+      const cvUrl = await uploadStudentFile(cvFile, "cv");
+
+      setUploadStatus(40, "Uploading application letter...");
+      const letterUrl = await uploadStudentFile(letterFile, "letter");
+
+      // NOTE: this stores file URLs only. The actual text extraction +
+      // skill-extraction step (PDF/DOCX -> text -> skills) happens in the
+      // backend call described in the next slice — see analyzing.js update.
+      // For now we save the file references and pending status so that step
+      // has something to read.
+      setUploadStatus(70, "Saving your document references...");
+      await setDoc(doc(db, "students", currentUser.uid), {
+        cvFileName: cvFile.name,
+        cvUrl,
+        applicationLetterFileName: letterFile.name,
+        applicationLetterUrl: letterUrl,
+        program: currentProfile.program || "",
+        skillExtractionStatus: "pending",
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      setUploadStatus(100, "Done. Redirecting to the interview...");
+      setTimeout(() => window.location.href = "interview.html", 500);
+    } catch (err) {
+      console.error(err);
+      msg.style.color = "#ffb3b3";
+      msg.textContent = "Upload failed. Please check your connection and try again.";
+      $("upload-progress").style.display = "none";
+    }
+  }
+
+  async function uploadStudentFile(file, kind) {
+    // Path: students/{uid}/cv.<ext> or students/{uid}/letter.<ext>
+    const ext = file.name.split(".").pop();
+    const path = `students/${currentUser.uid}/${kind}.${ext}`;
+    const ref = storageRef(storage, path);
+    await uploadBytes(ref, file);
+    return getDownloadURL(ref);
+  }
+
+  function setUploadStatus(pct, text) {
+    $("upload-progress-fill").style.width = `${pct}%`;
+    $("upload-status-text").textContent = text;
+  }
+</script>
+</body>
+</html>

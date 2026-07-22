@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Superadmin - BISU Interview System</title>
+  <link rel="icon" type="image/png" href="../assets/Bohol_Island_State_University.png" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="../index.html">
+      <div class="brand-logo"><img src="../assets/Bohol_Island_State_University.png" alt="BISU logo" /></div>
+      <div class="brand-text">
+        <span class="brand-name">BISU Clarin</span>
+        <span class="brand-sub">Superadmin Console</span>
+      </div>
+    </a>
+    <div class="flex items-center gap-12">
+      <span id="super-name-badge" style="font-size:0.82rem;color:rgba(255,255,255,0.7);"></span>
+      <button class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+    </div>
+  </div>
+</header>
+<main class="admin-shell">
+  <div class="container" id="loading-view">
+    <p style="color:rgba(255,255,255,0.6);text-align:center;">Checking your session...</p>
+  </div>
+
+  <div class="container" id="super-view" style="display:none;">
+    <div class="admin-grid" style="grid-template-columns: 1fr 1fr;">
+
+      <!-- Create / manage admin accounts -->
+      <div class="admin-card">
+        <h3 style="margin-bottom:4px;">Create Admin (Instructor) Account</h3>
+        <p style="color:rgba(255,255,255,0.55);font-size:0.82rem;margin-bottom:16px;">
+          Creates a real login for an instructor. Only accounts created here can access the Admin Dashboard.
+        </p>
+        <input id="new-admin-name" type="text" placeholder="Full Name" />
+        <input id="new-admin-email" type="email" placeholder="Instructor Email" />
+        <input id="new-admin-password" type="password" placeholder="Temporary Password (6+ chars)" />
+        <button class="btn btn-primary btn-lg" id="create-admin-btn" style="margin-top:8px;">Create Admin Account</button>
+        <p id="create-admin-message" style="margin-top:12px;font-size:0.85rem;"></p>
+
+        <h4 style="margin:24px 0 10px;">Existing Admins</h4>
+        <div id="admins-list"></div>
+      </div>
+
+      <!-- Org / agency management -->
+      <div class="admin-card">
+        <h3 style="margin-bottom:4px;">Organizations / Agencies</h3>
+        <p style="color:rgba(255,255,255,0.55);font-size:0.82rem;margin-bottom:16px;">
+          Each org has its own question bank and required-skills-per-position list,
+          used to match graduating students to relevant interview questions.
+        </p>
+        <input id="new-org-name" type="text" placeholder="Organization / Agency Name" />
+        <button class="btn btn-primary" id="create-org-btn" style="margin-top:4px;">Add Organization</button>
+        <p id="create-org-message" style="margin-top:10px;font-size:0.85rem;"></p>
+
+        <h4 style="margin:24px 0 10px;">Existing Organizations</h4>
+        <div id="orgs-list"></div>
+      </div>
+    </div>
+
+    <div class="admin-card" style="margin-top:20px;">
+      <h3 style="margin-bottom:4px;">All Registered Students</h3>
+      <p style="color:rgba(255,255,255,0.55);font-size:0.82rem;margin-bottom:16px;">Read-only overview across all programs.</p>
+      <div id="students-list"></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import {
+    auth, db, functions,
+    onAuthStateChanged, signOut,
+    getUserProfile,
+    collection, query, where, getDocs, addDoc, serverTimestamp,
+    httpsCallable
+  } from "../firebase/firebase-config.js";
+
+  const $ = id => document.getElementById(id);
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "auth.html"; return; }
+    const profile = await getUserProfile(user.uid);
+    if (!profile || profile.role !== "superadmin") {
+      // Not a superadmin — send them to their own role's page instead of
+      // silently showing this console.
+      window.location.href = "auth.html";
+      return;
+    }
+    $("super-name-badge").textContent = profile.name || profile.email || "";
+    $("loading-view").style.display = "none";
+    $("super-view").style.display = "block";
+    await Promise.all([loadAdmins(), loadOrgs(), loadStudents()]);
+  });
+
+  $("logout-btn").addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "auth.html";
+  });
+
+  // ---- Create admin account (via Cloud Function, not client-side) ----
+  $("create-admin-btn").addEventListener("click", async () => {
+    const name = $("new-admin-name").value.trim();
+    const email = $("new-admin-email").value.trim();
+    const password = $("new-admin-password").value;
+    const msg = $("create-admin-message");
+
+    if (!name || !email || !password) {
+      msg.style.color = "#ffb3b3";
+      msg.textContent = "Fill in name, email, and a temporary password.";
+      return;
+    }
+
+    msg.style.color = "rgba(255,255,255,0.6)";
+    msg.textContent = "Creating account...";
+
+    try {
+      const createAdminAccount = httpsCallable(functions, "createAdminAccount");
+      await createAdminAccount({ name, email, password });
+      msg.style.color = "#9be3c9";
+      msg.textContent = `Admin account created for ${email}. Share the temporary password securely — they should change it on first login.`;
+      $("new-admin-name").value = "";
+      $("new-admin-email").value = "";
+      $("new-admin-password").value = "";
+      await loadAdmins();
+    } catch (err) {
+      msg.style.color = "#ffb3b3";
+      msg.textContent = err.message || "Failed to create admin account.";
+    }
+  });
+
+  async function loadAdmins() {
+    const q = query(collection(db, "users"), where("role", "==", "admin"));
+    const snap = await getDocs(q);
+    const list = $("admins-list");
+    if (snap.empty) {
+      list.innerHTML = '<div style="padding:10px 0;color:rgba(255,255,255,0.5);font-size:0.85rem;">No instructor admins yet.</div>';
+      return;
+    }
+    list.innerHTML = snap.docs.map(d => {
+      const a = d.data();
+      return `<div class="detail-item" style="margin-bottom:8px;">
+        <strong>${escapeHtml(a.name || "Unnamed")}</strong><br/>
+        <span style="color:rgba(255,255,255,0.6);font-size:0.82rem;">${escapeHtml(a.email || "")}</span>
+      </div>`;
+    }).join("");
+  }
+
+  // ---- Organizations ----
+  $("create-org-btn").addEventListener("click", async () => {
+    const name = $("new-org-name").value.trim();
+    const msg = $("create-org-message");
+    if (!name) {
+      msg.style.color = "#ffb3b3";
+      msg.textContent = "Enter an organization name.";
+      return;
+    }
+    try {
+      await addDoc(collection(db, "orgs"), { name, createdAt: serverTimestamp() });
+      $("new-org-name").value = "";
+      msg.style.color = "#9be3c9";
+      msg.textContent = "Organization added.";
+      await loadOrgs();
+    } catch (err) {
+      msg.style.color = "#ffb3b3";
+      msg.textContent = "Failed to add organization.";
+    }
+  });
+
+  async function loadOrgs() {
+    const snap = await getDocs(collection(db, "orgs"));
+    const list = $("orgs-list");
+    if (snap.empty) {
+      list.innerHTML = '<div style="padding:10px 0;color:rgba(255,255,255,0.5);font-size:0.85rem;">No organizations added yet.</div>';
+      return;
+    }
+    list.innerHTML = snap.docs.map(d => `
+      <div class="detail-item" style="margin-bottom:8px;">${escapeHtml(d.data().name || "Unnamed org")}</div>
+    `).join("");
+  }
+
+  // ---- Students (read-only overview) ----
+  async function loadStudents() {
+    const q = query(collection(db, "users"), where("role", "==", "student"));
+    const snap = await getDocs(q);
+    const list = $("students-list");
+    if (snap.empty) {
+      list.innerHTML = '<div style="padding:10px 0;color:rgba(255,255,255,0.5);font-size:0.85rem;">No students registered yet.</div>';
+      return;
+    }
+    list.innerHTML = snap.docs.map(d => {
+      const s = d.data();
+      return `<div class="detail-item" style="margin-bottom:8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+        <span><strong>${escapeHtml(s.firstName || "")} ${escapeHtml(s.lastName || "")}</strong> — ${escapeHtml(s.program || "No program")}</span>
+        <span style="color:rgba(255,255,255,0.55);font-size:0.8rem;">${escapeHtml(s.studentId || "")}</span>
+      </div>`;
+    }).join("");
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+</script>
+</body>
+</html>

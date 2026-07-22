@@ -1,0 +1,102 @@
+/* ============================================================
+   analyzing.css — Screen 2: AI Processing Animation
+   ============================================================ */
+
+.analyzing-page { background: var(--navy); min-height: 100vh; display: flex; flex-direction: column; }
+
+#particle-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+.analyzing-content {
+  position: relative; z-index: 1;
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 24px; min-height: 100vh;
+}
+
+/* ── Orb ─────────────────────────────────────────────────── */
+.orb-wrap { position: relative; width: 170px; height: 170px; display: flex; align-items: center; justify-content: center; margin-bottom: 36px; }
+.orb-ring { position: absolute; border-radius: 50%; border: 2px solid transparent; }
+.orb-ring-1 { width: 170px; height: 170px; border-top-color: rgba(232,184,75,0.85); border-right-color: rgba(232,184,75,0.25); animation: spin 2.2s linear infinite; }
+.orb-ring-2 { width: 136px; height: 136px; border-bottom-color: rgba(29,184,160,0.85); border-left-color: rgba(29,184,160,0.25); animation: spin 1.6s linear infinite reverse; }
+.orb-ring-3 { width: 104px; height: 104px; border-top-color: rgba(255,255,255,0.3); border-right-color: rgba(255,255,255,0.08); animation: spin 3s linear infinite; }
+.orb-core {
+  width: 74px; height: 74px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(232,184,75,0.9), rgba(26,58,92,0.9));
+  box-shadow: 0 0 28px rgba(232,184,75,0.5), 0 0 60px rgba(232,184,75,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.9rem; animation: pulse 2s ease-in-out infinite; position: relative; z-index: 2;
+}
+
+.analyzing-title { font-family: var(--font-alt); font-size: clamp(1.5rem,4vw,2.1rem); font-weight: 700; color: #fff; text-align: center; margin-bottom: 8px; }
+.analyzing-sub   { font-size: 0.92rem; color: rgba(255,255,255,0.5); text-align: center; max-width: 400px; margin: 0 auto 32px; }
+
+/* ── Steps ───────────────────────────────────────────────── */
+.analysis-steps { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 9px; margin-bottom: 28px; }
+.analysis-step {
+  display: flex; align-items: center; gap: 13px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 13px; padding: 13px 17px; transition: all 0.4s ease; opacity: 0.4;
+}
+.analysis-step.active { background: rgba(232,184,75,0.08); border-color: rgba(232,184,75,0.3); opacity: 1; }
+.analysis-step.done   { background: rgba(29,184,160,0.07);  border-color: rgba(29,184,160,0.25); opacity: 1; }
+.step-icon-wrap {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.82rem; flex-shrink: 0;
+  background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.25); transition: all 0.4s ease;
+}
+.analysis-step.active .step-icon-wrap { background: rgba(232,184,75,0.15); color: var(--gold); animation: pulse 1.2s ease-in-out infinite; }
+.analysis-step.done   .step-icon-wrap { background: var(--teal); color: #fff; animation: none; }
+.step-name { font-size: 0.86rem; font-weight: 600; color: rgba(255,255,255,0.35); transition: color 0.3s; }
+.analysis-step.active .step-name { color: var(--gold); }
+.analysis-step.done   .step-name { color: rgba(255,255,255,0.8); }
+.step-desc { font-size: 0.74rem; color: rgba(255,255,255,0.25); margin-top: 1px; }
+.analysis-step.active .step-desc { color: rgba(255,255,255,0.45); }
+
+.typing-dots { display: inline-flex; gap: 3px; align-items: center; }
+.typing-dot  { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); animation: typing-bounce 1.2s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing-bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+/* ── Progress Bar ────────────────────────────────────────── */
+.main-progress-wrap { width: 100%; max-width: 500px; background: rgba(255,255,255,0.06); border-radius: 20px; height: 7px; overflow: hidden; margin-bottom: 10px; }
+.main-progress-fill {
+  height: 100%; border-radius: 20px;
+  background: linear-gradient(90deg, var(--teal), var(--gold));
+  width: 0%; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden;
+}
+.main-progress-fill::after {
+  content: ''; position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.4s infinite;
+}
+.progress-pct-label { text-align: right; font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.45); font-family: var(--font-mono); max-width: 500px; width: 100%; }
+
+/* ── Skills Preview ──────────────────────────────────────── */
+.skills-preview {
+  width: 100%; max-width: 500px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px; padding: 16px 18px; margin-top: 10px; display: none;
+}
+.skills-preview.visible { display: block; animation: fadeUp 0.4s var(--t) both; }
+.sp-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.35); text-transform: uppercase; margin-bottom: 10px; }
+.sp-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.sp-chip  { padding: 4px 12px; border-radius: 20px; font-size: 0.77rem; font-weight: 600; background: rgba(232,184,75,0.12); border: 1px solid rgba(232,184,75,0.3); color: var(--gold); animation: fadeUp 0.35s var(--t) both; }
+
+/* ── Live Log ────────────────────────────────────────────── */
+.live-log { width: 100%; max-width: 500px; height: 50px; overflow: hidden; position: relative; margin-bottom: 20px; }
+.log-item { position: absolute; left: 0; right: 0; font-family: var(--font-mono); font-size: 0.73rem; color: rgba(255,255,255,0.3); text-align: center; animation: logScroll 0.4s ease both; }
+@keyframes logScroll { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Complete ────────────────────────────────────────────── */
+.analyzing-complete { display: none; flex-direction: column; align-items: center; text-align: center; }
+.analyzing-complete.visible { display: flex; animation: fadeUp 0.5s var(--t) both; }
+.complete-icon {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--teal), #0e8a75);
+  display: flex; align-items: center; justify-content: center; font-size: 1.9rem;
+  margin-bottom: 18px; box-shadow: 0 0 36px rgba(29,184,160,0.4);
+}
+.complete-title { font-family: var(--font-alt); font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.complete-sub   { font-size: 0.88rem; color: rgba(255,255,255,0.5); margin-bottom: 26px; }

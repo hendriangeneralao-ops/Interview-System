@@ -1,0 +1,102 @@
+:root {
+  color-scheme: dark;
+}
+body {
+  background: linear-gradient(135deg, #07131f 0%, #13253c 100%);
+  color: #f6f8fc;
+  min-height: 100vh;
+}
+.admin-shell {
+  padding: 36px 0 60px;
+}
+.admin-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 360px 1fr;
+  align-items: start;
+}
+.admin-card,
+.admin-list-card,
+.admin-detail-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.16);
+}
+.admin-list-card {
+  padding: 0;
+  overflow: hidden;
+}
+.admin-list-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.result-item {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.result-item:hover,
+.result-item.active {
+  background: rgba(255,255,255,0.08);
+}
+.result-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  color: rgba(255,255,255,0.62);
+  font-size: 0.78rem;
+}
+.score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(29,184,160,0.16);
+  color: #7be3d1;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.detail-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.detail-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+}
+.answer-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.76);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.auth-card {
+  max-width: 420px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 24px;
+}
+.auth-card input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+@media (max-width: 880px) {
+  .admin-grid { grid-template-columns: 1fr; }
+}
