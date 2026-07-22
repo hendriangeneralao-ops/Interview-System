@@ -21,40 +21,85 @@
     <div class="header-badge">ACCOUNT ACCESS</div>
   </div>
 </header>
-<main class="admin-shell">
+
+<main class="auth-shell">
   <div class="container">
     <div class="auth-card">
-      <div id="login-view">
-        <h2 style="margin-bottom:8px;">Login</h2>
-        <p style="color:rgba(255,255,255,0.6);margin-bottom:18px;">Sign in with your BISU email to continue.</p>
-        <input id="login-email" type="email" placeholder="BISU Email" />
-        <input id="login-password" type="password" placeholder="Password" />
-        <button class="btn btn-primary btn-lg" id="login-btn">Login</button>
-        <p style="margin-top:12px;font-size:0.85rem;color:rgba(255,255,255,0.65);">No account yet? <a href="#" id="show-register-link" style="color:#f2c96b;">Register here</a></p>
-        <p id="login-message" style="margin-top:12px;color:#ffb3b3;font-size:0.85rem;"></p>
+      <div class="auth-card-head">
+        <span class="auth-pill">Student Portal</span>
+        <h1>Welcome to BISU Interviews</h1>
+        <p>Sign in to continue or create a new account to begin your interview journey.</p>
       </div>
 
-      <div id="register-view" style="display:none;">
-        <h2 style="margin-bottom:8px;">Register</h2>
-        <p style="color:rgba(255,255,255,0.6);margin-bottom:18px;">Create your student account before starting the interview.</p>
-        <input id="reg-firstname" type="text" placeholder="First Name" />
-        <input id="reg-lastname" type="text" placeholder="Last Name" />
-        <input id="reg-mi" type="text" placeholder="Middle Initial" />
-        <input id="reg-student-id" type="text" placeholder="Student ID" />
-        <select id="reg-program" style="width:100%;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;padding:12px 14px;margin-bottom:12px;">
-          <option value="">Select Program</option>
-          <option>BS Computer Science</option>
-          <option>BS Information Technology</option>
-          <option>BS Mathematics</option>
-          <option>BS Biology</option>
-          <option>BS Accountancy</option>
-        </select>
-        <input id="reg-email" type="email" placeholder="BISU Email" />
-        <input id="reg-password" type="password" placeholder="Password (min 6 characters)" />
-        <input id="reg-section" type="text" placeholder="Section" />
-        <button class="btn btn-primary btn-lg" id="register-btn">Register</button>
-        <p style="margin-top:12px;font-size:0.85rem;color:rgba(255,255,255,0.65);">Already have an account? <a href="#" id="show-login-link" style="color:#f2c96b;">Login here</a></p>
-        <p id="register-message" style="margin-top:12px;color:#ffb3b3;font-size:0.85rem;"></p>
+      <div id="login-view" class="auth-view">
+        <label class="auth-field">
+          <span>BISU Email</span>
+          <input id="login-email" type="email" placeholder="name@bisu.edu.ph" autocomplete="email" />
+        </label>
+        <label class="auth-field">
+          <span>Password</span>
+          <div class="password-input-wrap">
+            <input id="login-password" type="password" placeholder="Enter your password" autocomplete="current-password" />
+            <button type="button" class="password-toggle" data-target="login-password" aria-label="Show password">👁</button>
+          </div>
+        </label>
+        <button class="btn btn-primary btn-lg btn-full" id="login-btn">Sign In</button>
+        <div class="auth-switch-row">
+          <span>New here?</span>
+          <a href="#" id="show-register-link">Create account</a>
+        </div>
+        <p id="login-message" class="auth-message" role="status"></p>
+      </div>
+
+      <div id="register-view" class="auth-view" style="display:none;">
+        <label class="auth-field">
+          <span>First Name</span>
+          <input id="reg-firstname" type="text" placeholder="Juan" />
+        </label>
+        <label class="auth-field">
+          <span>Last Name</span>
+          <input id="reg-lastname" type="text" placeholder="Dela Cruz" />
+        </label>
+        <label class="auth-field">
+          <span>Middle Initial</span>
+          <input id="reg-mi" type="text" placeholder="A" />
+        </label>
+        <label class="auth-field">
+          <span>Student ID</span>
+          <input id="reg-student-id" type="text" placeholder="2024-0001" />
+        </label>
+        <label class="auth-field">
+          <span>Program</span>
+          <select id="reg-program">
+            <option value="">Select Program</option>
+            <option>BS Computer Science</option>
+            <option>BS Information Technology</option>
+            <option>BS Mathematics</option>
+            <option>BS Biology</option>
+            <option>BS Accountancy</option>
+          </select>
+        </label>
+        <label class="auth-field">
+          <span>BISU Email</span>
+          <input id="reg-email" type="email" placeholder="name@bisu.edu.ph" autocomplete="email" />
+        </label>
+        <label class="auth-field">
+          <span>Password</span>
+          <div class="password-input-wrap">
+            <input id="reg-password" type="password" placeholder="Minimum 6 characters" autocomplete="new-password" />
+            <button type="button" class="password-toggle" data-target="reg-password" aria-label="Show password">👁</button>
+          </div>
+        </label>
+        <label class="auth-field">
+          <span>Section</span>
+          <input id="reg-section" type="text" placeholder="Section" />
+        </label>
+        <button class="btn btn-primary btn-lg btn-full" id="register-btn">Create Account</button>
+        <div class="auth-switch-row">
+          <span>Already registered?</span>
+          <a href="#" id="show-login-link">Back to sign in</a>
+        </div>
+        <p id="register-message" class="auth-message" role="status"></p>
       </div>
     </div>
   </div>
@@ -69,19 +114,43 @@
     getUserProfile,
     redirectForRole,
     serverTimestamp
-  } from "../firebase/firebase-config.js";
+  } from "../js/firebase-config.js";
 
   const $ = id => document.getElementById(id);
 
+  function showView(viewName) {
+    const loginView = $('login-view');
+    const registerView = $('register-view');
+    loginView.style.display = viewName === 'login' ? 'block' : 'none';
+    registerView.style.display = viewName === 'register' ? 'block' : 'none';
+  }
+
   $('show-register-link').addEventListener('click', e => {
     e.preventDefault();
-    $('login-view').style.display = 'none';
-    $('register-view').style.display = 'block';
+    showView('register');
   });
   $('show-login-link').addEventListener('click', e => {
     e.preventDefault();
-    $('register-view').style.display = 'none';
-    $('login-view').style.display = 'block';
+    showView('login');
+  });
+
+  document.querySelectorAll('input, select').forEach(element => {
+    element.addEventListener('keydown', event => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      if (element.id.startsWith('reg-')) registerUser();
+      else loginUser();
+    });
+  });
+
+  document.querySelectorAll('.password-toggle').forEach(button => {
+    button.addEventListener('click', () => {
+      const input = $(button.dataset.target);
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      button.textContent = isPassword ? '🙈' : '👁';
+      button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
   });
 
   $('register-btn').addEventListener('click', registerUser);
@@ -100,22 +169,20 @@
 
     if (!firstName || !lastName || !studentId || !program || !email || !password) {
       msg.textContent = 'Please complete all required fields.';
+      msg.classList.add('error');
       return;
     }
     if (password.length < 6) {
       msg.textContent = 'Password must be at least 6 characters.';
+      msg.classList.add('error');
       return;
     }
 
-    msg.style.color = '#ffb3b3';
+    msg.classList.remove('error');
     msg.textContent = 'Creating your account...';
 
     try {
-      // 1. Create the Auth user (email + password).
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-
-      // 2. Create their /users/{uid} profile doc. Security rules only allow
-      //    role: 'student' here — nobody can self-register as admin.
       await setDoc(doc(db, 'users', cred.user.uid), {
         role: 'student',
         firstName, lastName, middleInitial, studentId, program, section,
@@ -123,11 +190,11 @@
         createdAt: serverTimestamp()
       });
 
-      msg.style.color = '#9be3c9';
+      msg.classList.remove('error');
       msg.textContent = 'Registration successful. Redirecting...';
       setTimeout(() => window.location.href = 'student.html', 600);
     } catch (err) {
-      msg.style.color = '#ffb3b3';
+      msg.classList.add('error');
       msg.textContent = friendlyAuthError(err);
     }
   }
@@ -139,20 +206,24 @@
 
     if (!email || !password) {
       msg.textContent = 'Please enter your email and password.';
+      msg.classList.add('error');
       return;
     }
 
     msg.textContent = 'Signing in...';
+    msg.classList.remove('error');
 
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const profile = await getUserProfile(cred.user.uid);
       if (!profile) {
         msg.textContent = 'No profile found for this account. Contact an admin.';
+        msg.classList.add('error');
         return;
       }
       redirectForRole(profile.role);
     } catch (err) {
+      msg.classList.add('error');
       msg.textContent = friendlyAuthError(err);
     }
   }
