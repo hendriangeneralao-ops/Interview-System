@@ -254,16 +254,22 @@ body {
 .preview-summary strong {
   color: #fff;
 }
-.student-page .container.container-full {
+.student-page .container.container-full,
+.admin-page .container.container-full,
+.superadmin-page .container.container-full {
   max-width: none;
   padding-left: 24px;
   padding-right: 24px;
 }
-.student-page .admin-shell {
+.student-page .admin-shell,
+.admin-page .admin-shell,
+.superadmin-page .admin-shell {
   padding-left: 24px;
   padding-right: 24px;
 }
 .student-page .site-header .container,
+.admin-page .site-header .container,
+.superadmin-page .site-header .container,
 .student-page .student-shell .container {
   max-width: none;
 }

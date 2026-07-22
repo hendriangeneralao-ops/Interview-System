@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/admin.css" />
 </head>
-<body>
+<body class="superadmin-page">
 <header class="site-header">
-  <div class="container">
+  <div class="container container-full">
     <a class="brand" href="../index.html">
       <div class="brand-logo"><img src="../assets/Bohol_Island_State_University.png" alt="BISU logo" /></div>
       <div class="brand-text">
@@ -25,14 +25,13 @@
   </div>
 </header>
 <main class="admin-shell">
-  <div class="container" id="loading-view">
+  <div class="container container-full" id="loading-view">
     <p style="color:rgba(255,255,255,0.6);text-align:center;">Checking your session...</p>
   </div>
 
-  <div class="container" id="super-view" style="display:none;">
-    <div class="admin-grid" style="grid-template-columns: 1fr 1fr;">
+  <div class="container container-full" id="super-view" style="display:none;">
+    <div class="admin-grid" style="grid-template-columns: minmax(320px, 24%) minmax(0, 76%); gap: 24px;">
 
-      <!-- Create / manage admin accounts -->
       <div class="admin-card">
         <h3 style="margin-bottom:4px;">Create Admin (Instructor) Account</h3>
         <p style="color:rgba(255,255,255,0.55);font-size:0.82rem;margin-bottom:16px;">
@@ -41,33 +40,48 @@
         <input id="new-admin-name" type="text" placeholder="Full Name" />
         <input id="new-admin-email" type="email" placeholder="Instructor Email" />
         <input id="new-admin-password" type="password" placeholder="Temporary Password (6+ chars)" />
+        <label style="display:block;margin:12px 0 6px;font-size:0.82rem;color:rgba(255,255,255,0.7);">Department</label>
+        <select id="new-admin-program">
+          <option value="">Select Department</option>
+          <option>Bachelor of Science in Computer Science (BSCS)</option>
+          <option>Bachelor of Science in Environmental Science (BSES)</option>
+          <option>Bachelor of Science in Hospitality Management (BSHM)</option>
+        </select>
+        <input id="new-admin-section" type="text" placeholder="Section" />
         <button class="btn btn-primary btn-lg" id="create-admin-btn" style="margin-top:8px;">Create Admin Account</button>
         <p id="create-admin-message" style="margin-top:12px;font-size:0.85rem;"></p>
 
         <h4 style="margin:24px 0 10px;">Existing Admins</h4>
         <div id="admins-list"></div>
+
+        <div id="admin-edit-panel" style="display:none;margin-top:16px;padding:16px;border:1px solid rgba(255,255,255,0.12);border-radius:14px;">
+          <h4 style="margin:0 0 12px;">Edit Admin Account</h4>
+          <input id="edit-admin-name" type="text" placeholder="Full Name" />
+          <input id="edit-admin-email" type="email" placeholder="Instructor Email" />
+          <label style="display:block;margin:12px 0 6px;font-size:0.82rem;color:rgba(255,255,255,0.7);">Department</label>
+          <select id="edit-admin-program">
+            <option value="">Select Department</option>
+            <option>Bachelor of Science in Computer Science (BSCS)</option>
+            <option>Bachelor of Science in Environmental Science (BSES)</option>
+            <option>Bachelor of Science in Hospitality Management (BSHM)</option>
+          </select>
+          <input id="edit-admin-section" type="text" placeholder="Section" />
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;">
+            <button class="btn btn-primary btn-sm" id="save-admin-btn">Save Changes</button>
+            <button class="btn btn-danger btn-sm" id="delete-admin-btn">Delete Admin</button>
+            <button class="btn btn-secondary btn-sm" id="cancel-admin-edit-btn">Cancel</button>
+          </div>
+          <p id="edit-admin-message" style="margin-top:10px;font-size:0.85rem;"></p>
+        </div>
       </div>
 
-      <!-- Org / agency management -->
-      <div class="admin-card">
-        <h3 style="margin-bottom:4px;">Organizations / Agencies</h3>
-        <p style="color:rgba(255,255,255,0.55);font-size:0.82rem;margin-bottom:16px;">
-          Each org has its own question bank and required-skills-per-position list,
-          used to match graduating students to relevant interview questions.
-        </p>
-        <input id="new-org-name" type="text" placeholder="Organization / Agency Name" />
-        <button class="btn btn-primary" id="create-org-btn" style="margin-top:4px;">Add Organization</button>
-        <p id="create-org-message" style="margin-top:10px;font-size:0.85rem;"></p>
-
-        <h4 style="margin:24px 0 10px;">Existing Organizations</h4>
-        <div id="orgs-list"></div>
+      <div class="admin-card" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <h3 style="margin-bottom:4px;">All Registered Students</h3>
+          <p style="color:rgba(255,255,255,0.55);font-size:0.82rem;margin-bottom:16px;">Read-only overview across all programs.</p>
+          <div id="students-list"></div>
+        </div>
       </div>
-    </div>
-
-    <div class="admin-card" style="margin-top:20px;">
-      <h3 style="margin-bottom:4px;">All Registered Students</h3>
-      <p style="color:rgba(255,255,255,0.55);font-size:0.82rem;margin-bottom:16px;">Read-only overview across all programs.</p>
-      <div id="students-list"></div>
     </div>
   </div>
 </main>
@@ -82,13 +96,13 @@
   } from "../js/firebase-config.js";
 
   const $ = id => document.getElementById(id);
+  let adminList = [];
+  let editingAdminUid = null;
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = "auth.html"; return; }
     const profile = await getUserProfile(user.uid);
     if (!profile || profile.role !== "superadmin") {
-      // Not a superadmin — send them to their own role's page instead of
-      // silently showing this console.
       window.location.href = "auth.html";
       return;
     }
@@ -103,16 +117,17 @@
     window.location.href = "auth.html";
   });
 
-  // ---- Create admin account (via Cloud Function, not client-side) ----
   $("create-admin-btn").addEventListener("click", async () => {
     const name = $("new-admin-name").value.trim();
     const email = $("new-admin-email").value.trim();
     const password = $("new-admin-password").value;
+    const program = $("new-admin-program").value;
+    const section = $("new-admin-section").value.trim();
     const msg = $("create-admin-message");
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !program || !section) {
       msg.style.color = "#ffb3b3";
-      msg.textContent = "Fill in name, email, and a temporary password.";
+      msg.textContent = "Fill in name, email, password, department, and section.";
       return;
     }
 
@@ -121,17 +136,73 @@
 
     try {
       const createAdminAccount = httpsCallable(functions, "createAdminAccount");
-      await createAdminAccount({ name, email, password });
+      await createAdminAccount({ name, email, password, program, section });
       msg.style.color = "#9be3c9";
       msg.textContent = `Admin account created for ${email}. Share the temporary password securely — they should change it on first login.`;
       $("new-admin-name").value = "";
       $("new-admin-email").value = "";
       $("new-admin-password").value = "";
+      $("new-admin-program").value = "";
+      $("new-admin-section").value = "";
       await loadAdmins();
     } catch (err) {
       msg.style.color = "#ffb3b3";
       msg.textContent = err.message || "Failed to create admin account.";
     }
+  });
+
+  $("save-admin-btn").addEventListener("click", async () => {
+    if (!editingAdminUid) return;
+    const name = $("edit-admin-name").value.trim();
+    const email = $("edit-admin-email").value.trim();
+    const program = $("edit-admin-program").value;
+    const section = $("edit-admin-section").value.trim();
+    const msg = $("edit-admin-message");
+
+    if (!name || !email || !program || !section) {
+      msg.style.color = "#ffb3b3";
+      msg.textContent = "Fill in name, email, department, and section.";
+      return;
+    }
+
+    msg.style.color = "rgba(255,255,255,0.6)";
+    msg.textContent = "Saving changes...";
+
+    try {
+      const updateAdminAccount = httpsCallable(functions, "updateAdminAccount");
+      await updateAdminAccount({ uid: editingAdminUid, name, email, program, section });
+      msg.style.color = "#9be3c9";
+      msg.textContent = "Admin account updated successfully.";
+      await loadAdmins();
+      hideAdminEditPanel();
+    } catch (err) {
+      msg.style.color = "#ffb3b3";
+      msg.textContent = err.message || "Failed to update admin account.";
+    }
+  });
+
+  $("delete-admin-btn").addEventListener("click", async () => {
+    if (!editingAdminUid) return;
+    if (!confirm("Delete this admin account? This will remove their access permanently.")) return;
+    const msg = $("edit-admin-message");
+    msg.style.color = "rgba(255,255,255,0.6)";
+    msg.textContent = "Deleting admin...";
+
+    try {
+      const deleteAdminAccount = httpsCallable(functions, "deleteAdminAccount");
+      await deleteAdminAccount({ uid: editingAdminUid });
+      msg.style.color = "#9be3c9";
+      msg.textContent = "Admin account deleted.";
+      await loadAdmins();
+      hideAdminEditPanel();
+    } catch (err) {
+      msg.style.color = "#ffb3b3";
+      msg.textContent = err.message || "Failed to delete admin account.";
+    }
+  });
+
+  $("cancel-admin-edit-btn").addEventListener("click", () => {
+    hideAdminEditPanel();
   });
 
   async function loadAdmins() {
@@ -140,15 +211,67 @@
     const list = $("admins-list");
     if (snap.empty) {
       list.innerHTML = '<div style="padding:10px 0;color:rgba(255,255,255,0.5);font-size:0.85rem;">No instructor admins yet.</div>';
+      adminList = [];
+      hideAdminEditPanel();
       return;
     }
-    list.innerHTML = snap.docs.map(d => {
-      const a = d.data();
-      return `<div class="detail-item" style="margin-bottom:8px;">
-        <strong>${escapeHtml(a.name || "Unnamed")}</strong><br/>
-        <span style="color:rgba(255,255,255,0.6);font-size:0.82rem;">${escapeHtml(a.email || "")}</span>
-      </div>`;
-    }).join("");
+    adminList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    list.innerHTML = adminList.map(a => `
+      <div class="detail-item" style="margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div style="min-width:0;">
+          <strong>${escapeHtml(a.name || "Unnamed")}</strong><br/>
+          <span style="color:rgba(255,255,255,0.6);font-size:0.82rem;">${escapeHtml(a.email || "")}</span><br/>
+          <span style="color:rgba(255,255,255,0.55);font-size:0.8rem;">${escapeHtml(a.program || "No department")}${a.section ? ` • ${escapeHtml(a.section)}` : ""}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm admin-action-btn" data-action="edit" data-uid="${a.id}">Edit</button>
+          <button class="btn btn-danger btn-sm admin-action-btn" data-action="delete" data-uid="${a.id}">Delete</button>
+        </div>
+      </div>`).join("");
+
+    list.querySelectorAll(".admin-action-btn").forEach(btn => {
+      btn.addEventListener("click", (event) => {
+        const uid = event.currentTarget.dataset.uid;
+        const action = event.currentTarget.dataset.action;
+        if (action === "edit") beginEditAdmin(uid);
+        else if (action === "delete") confirmDeleteAdmin(uid);
+      });
+    });
+  }
+
+  function beginEditAdmin(uid) {
+    const admin = adminList.find(item => item.id === uid);
+    if (!admin) return;
+    editingAdminUid = uid;
+    $("edit-admin-name").value = admin.name || "";
+    $("edit-admin-email").value = admin.email || "";
+    $("edit-admin-program").value = admin.program || "";
+    $("edit-admin-section").value = admin.section || "";
+    $("edit-admin-message").textContent = "";
+    $("admin-edit-panel").style.display = "block";
+  }
+
+  function hideAdminEditPanel() {
+    editingAdminUid = null;
+    $("admin-edit-panel").style.display = "none";
+  }
+
+  async function confirmDeleteAdmin(uid) {
+    if (!confirm("Delete this admin account? This will remove their access permanently.")) return;
+    const msg = $("edit-admin-message");
+    msg.style.color = "rgba(255,255,255,0.6)";
+    msg.textContent = "Deleting admin...";
+    try {
+      const deleteAdminAccount = httpsCallable(functions, "deleteAdminAccount");
+      await deleteAdminAccount({ uid });
+      msg.style.color = "#9be3c9";
+      msg.textContent = "Admin account deleted.";
+      await loadAdmins();
+      hideAdminEditPanel();
+    } catch (err) {
+      msg.style.color = "#ffb3b3";
+      msg.textContent = err.message || "Failed to delete admin account.";
+    }
   }
 
   // ---- Organizations ----
@@ -184,7 +307,6 @@
     `).join("");
   }
 
-  // ---- Students (read-only overview) ----
   async function loadStudents() {
     const q = query(collection(db, "users"), where("role", "==", "student"));
     const snap = await getDocs(q);

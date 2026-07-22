@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/admin.css" />
 </head>
-<body>
+<body class="admin-page">
 <header class="site-header">
-  <div class="container">
+  <div class="container container-full">
     <a class="brand" href="../index.html">
       <div class="brand-logo"><img src="../assets/Bohol_Island_State_University.png" alt="BISU logo" /></div>
       <div class="brand-text">
@@ -25,16 +25,16 @@
   </div>
 </header>
 <main class="admin-shell">
-  <div class="container" id="loading-view">
+  <div class="container container-full" id="loading-view">
     <p style="color:rgba(255,255,255,0.6);text-align:center;">Checking your session...</p>
   </div>
 
-  <div class="container" id="admin-view" style="display:none;">
+  <div class="container container-full" id="admin-view" style="display:none;">
     <div class="admin-grid">
       <div class="admin-list-card">
         <div class="admin-list-header">
-          <h3 style="margin:0;">Student Results</h3>
-          <p style="margin:6px 0 0;color:rgba(255,255,255,0.55);font-size:0.82rem;">Select a student to review their final interview outcome.</p>
+          <h3 style="margin:0;">Student List</h3>
+          <p style="margin:6px 0 0;color:rgba(255,255,255,0.55);font-size:0.82rem;">Select a student to view their assigned department and section.</p>
         </div>
         <div id="results-list"></div>
       </div>
@@ -54,14 +54,17 @@
 
 <script type="module">
   import {
-    auth, db,
+    auth, db, functions,
     onAuthStateChanged, signOut,
     getUserProfile,
-    collection, query, where, getDocs
+    collection, query, where, getDocs,
+    httpsCallable
   } from "../js/firebase-config.js";
 
   const $ = id => document.getElementById(id);
-  let results = [];
+  let students = [];
+  let currentProfile = null;
+  let selectedStudentId = null;
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = "auth.html"; return; }
@@ -70,10 +73,11 @@
       window.location.href = "auth.html";
       return;
     }
+    currentProfile = profile;
     $("admin-name-badge").textContent = profile.name || profile.email || "";
     $("loading-view").style.display = "none";
     $("admin-view").style.display = "block";
-    await loadResults();
+    await loadStudents();
   });
 
   $("logout-btn").addEventListener("click", async () => {
@@ -81,69 +85,144 @@
     window.location.href = "auth.html";
   });
 
-  async function loadResults() {
-    // Security rules let admin/superadmin read every doc in /results.
-    const snap = await getDocs(collection(db, "results"));
-    results = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    renderResults();
-    if (results.length) {
-      renderDetail(results[0]);
+  async function loadStudents() {
+    const usersCol = collection(db, "users");
+    let q;
+
+    if (currentProfile.role === "admin" && currentProfile.program && currentProfile.section) {
+      q = query(usersCol, where("role", "==", "student"), where("program", "==", currentProfile.program), where("section", "==", currentProfile.section));
+    } else if (currentProfile.role === "admin" && currentProfile.program) {
+      q = query(usersCol, where("role", "==", "student"), where("program", "==", currentProfile.program));
     } else {
-      $("detail-content").innerHTML = '<p style="color:rgba(255,255,255,0.6);">No student results have been saved yet.</p>';
+      q = query(usersCol, where("role", "==", "student"));
     }
+
+    const snap = await getDocs(q);
+    students = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => ((a.lastName || "").localeCompare(b.lastName || "")) || ((a.firstName || "").localeCompare(b.firstName || "")));
+
+    if (!selectedStudentId && students.length) {
+      selectedStudentId = students[0].id;
+    }
+
+    renderStudentList();
+    renderStudentDetail();
   }
 
-  function renderResults() {
+  function renderStudentList() {
     const list = $("results-list");
-    if (!results.length) {
-      list.innerHTML = '<div style="padding:20px;color:rgba(255,255,255,0.6);">No results available.</div>';
+    if (!students.length) {
+      list.innerHTML = '<div style="padding:20px;color:rgba(255,255,255,0.6);">No student accounts available.</div>';
       return;
     }
-    list.innerHTML = results.map((item, index) => `
-      <div class="result-item ${index === 0 ? "active" : ""}" data-index="${index}">
-        <div style="font-weight:700;">${escapeHtml(item.studentName || "Student " + (index + 1))}</div>
-        <div class="score-pill">${item.overallScore || 0}%</div>
+
+    list.innerHTML = students.map(student => `
+      <div class="result-item ${student.id === selectedStudentId ? "active" : ""}" data-id="${student.id}">
+        <div style="font-weight:700;">${escapeHtml(student.firstName || "")} ${escapeHtml(student.lastName || "")}</div>
+        <div class="score-pill">${escapeHtml(student.studentId || "No ID")}</div>
         <div class="result-meta">
-          <span>${escapeHtml(item.program || "Program not specified")}</span>
-          <span>${new Date(item.createdAt || Date.now()).toLocaleDateString()}</span>
+          <span>${escapeHtml(student.program || "Program not specified")}${student.section ? ` / ${escapeHtml(student.section)}` : ""}</span>
+          <span>${escapeHtml(student.email || "")}</span>
         </div>
-      </div>
-    `).join("");
+      </div>`).join("");
+
     list.querySelectorAll(".result-item").forEach(el => {
-      el.addEventListener("click", () => selectResult(Number(el.dataset.index)));
+      el.addEventListener("click", () => {
+        selectedStudentId = el.dataset.id;
+        renderStudentList();
+        renderStudentDetail();
+      });
     });
   }
 
-  function selectResult(index) {
-    document.querySelectorAll(".result-item").forEach((item, idx) => item.classList.toggle("active", idx === index));
-    renderDetail(results[index]);
-  }
-
-  function renderDetail(item) {
+  function renderStudentDetail() {
     const detail = $("detail-content");
-    const responseSummary = (item.answers || []).map((entry, idx) => `
-      <div class="detail-item">
-        <strong>Q${idx + 1}:</strong> ${escapeHtml(entry.question)}
-        <div class="answer-block">${escapeHtml(entry.answer || "No answer recorded.")}</div>
-      </div>
-    `).join("");
+    const student = students.find(s => s.id === selectedStudentId);
+    if (!student) {
+      detail.innerHTML = '<p style="color:rgba(255,255,255,0.6);">Select a student to manage their account.</p>';
+      return;
+    }
 
     detail.innerHTML = `
-      <h4 style="margin:0 0 8px;">${escapeHtml(item.studentName || "Student")}</h4>
-      <p style="margin:0 0 16px;color:rgba(255,255,255,0.65);">${escapeHtml(item.program || "Program not specified")}</p>
+      <h4 style="margin:0 0 8px;">${escapeHtml(student.firstName || "")} ${escapeHtml(student.lastName || "")}</h4>
+      <p style="margin:0 0 16px;color:rgba(255,255,255,0.65);">Manage this student account in your assigned department and section.</p>
       <div class="detail-list">
-        <div class="detail-item"><strong>Overall Result:</strong> ${item.overallScore || 0}%</div>
-        <div class="detail-item"><strong>Recommended Job:</strong> ${escapeHtml(item.recommendedJob || "Not available")}</div>
-        <div class="detail-item"><strong>Key Strengths:</strong> ${escapeHtml((item.strengths || []).join(", ") || "None listed")}</div>
-        <div class="detail-item"><strong>Areas to Improve:</strong> ${escapeHtml((item.improvements || []).join(", ") || "None listed")}</div>
-        <div class="detail-item"><strong>Interview Summary:</strong><div class="answer-block">${escapeHtml(item.summary || "No summary available.")}</div></div>
+        <div class="detail-item"><strong>Student ID:</strong> ${escapeHtml(student.studentId || "-")}</div>
+        <div class="detail-item"><strong>Email:</strong> ${escapeHtml(student.email || "-")}</div>
+        <div class="detail-item"><strong>Program:</strong> ${escapeHtml(student.program || "-")}</div>
+        <div class="detail-item"><strong>Section:</strong><input id="student-section-input" type="text" value="${escapeHtml(student.section || "")}" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.08);color:#fff;" /></div>
+        <div class="detail-item"><strong>First Name:</strong><input id="student-firstname-input" type="text" value="${escapeHtml(student.firstName || "")}" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.08);color:#fff;" /></div>
+        <div class="detail-item"><strong>Last Name:</strong><input id="student-lastname-input" type="text" value="${escapeHtml(student.lastName || "")}" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.08);color:#fff;" /></div>
       </div>
-      <div style="margin-top:16px;">
-        <h5 style="margin-bottom:8px;">Student Answers</h5>
-        ${responseSummary}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+        <button class="btn btn-primary" id="save-student-btn">Save Student</button>
+        <button class="btn btn-danger" id="delete-student-btn">Delete Student</button>
       </div>
+      <p id="student-action-message" style="margin-top:12px;font-size:0.9rem;"></p>
     `;
+
+    attachStudentActions(student);
+  }
+
+  function attachStudentActions(student) {
+    const saveButton = $("save-student-btn");
+    const deleteButton = $("delete-student-btn");
+
+    if (saveButton) {
+      saveButton.addEventListener("click", async () => {
+        const firstName = $("student-firstname-input").value.trim();
+        const lastName = $("student-lastname-input").value.trim();
+        const section = $("student-section-input").value.trim();
+        const message = $("student-action-message");
+
+        if (!firstName || !lastName || !section) {
+          message.style.color = "#ffb3b3";
+          message.textContent = "Fill in first name, last name, and section.";
+          return;
+        }
+
+        message.style.color = "rgba(255,255,255,0.6)";
+        message.textContent = "Saving student...";
+
+        try {
+          const updateStudentAccount = httpsCallable(functions, "updateStudentAccount");
+          await updateStudentAccount({ uid: student.id, firstName, lastName, section });
+          message.style.color = "#9be3c9";
+          message.textContent = "Student account updated.";
+          student.firstName = firstName;
+          student.lastName = lastName;
+          student.section = section;
+          renderStudentList();
+          renderStudentDetail();
+        } catch (err) {
+          message.style.color = "#ffb3b3";
+          message.textContent = err.message || "Failed to update student account.";
+        }
+      });
+    }
+
+    if (deleteButton) {
+      deleteButton.addEventListener("click", async () => {
+        if (!confirm("Delete this student account? This action cannot be undone.")) return;
+        const message = $("student-action-message");
+        message.style.color = "rgba(255,255,255,0.6)";
+        message.textContent = "Deleting student...";
+
+        try {
+          const deleteStudentAccount = httpsCallable(functions, "deleteStudentAccount");
+          await deleteStudentAccount({ uid: student.id });
+          message.style.color = "#9be3c9";
+          message.textContent = "Student account deleted.";
+          students = students.filter(item => item.id !== student.id);
+          selectedStudentId = students.length ? students[0].id : null;
+          renderStudentList();
+          renderStudentDetail();
+        } catch (err) {
+          message.style.color = "#ffb3b3";
+          message.textContent = err.message || "Failed to delete student account.";
+        }
+      });
+    }
   }
 
   function escapeHtml(str) {
