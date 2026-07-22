@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/admin.css" />
 </head>
-<body>
+<body class="student-page">
 <header class="site-header">
-  <div class="container">
+  <div class="container container-full">
     <a class="brand" href="../index.html">
       <div class="brand-logo"><img src="../assets/Bohol_Island_State_University.png" alt="BISU logo" /></div>
       <div class="brand-text">
@@ -24,31 +24,53 @@
     </div>
   </div>
 </header>
-<main class="admin-shell">
-  <div class="container">
+<main class="admin-shell student-shell">
+  <div class="container container-full">
     <div class="auth-card" id="loading-view">
       <p style="color:rgba(255,255,255,0.6);">Checking your session...</p>
     </div>
 
-    <div class="auth-card" id="upload-view" style="display:none;">
-      <h2 style="margin-bottom:8px;">Upload Your Documents</h2>
-      <p style="color:rgba(255,255,255,0.6);margin-bottom:18px;">Upload your CV and application letter. These are scanned to identify your skills before the interview.</p>
+    <div class="student-grid" id="student-layout" style="display:none;">
+      <div class="auth-card" id="upload-view">
+        <h2 style="margin-bottom:8px;">Upload Your Documents</h2>
+        <p style="color:rgba(255,255,255,0.6);margin-bottom:18px;">Upload your CV and application letter. These are scanned to identify your skills before the interview.</p>
 
-      <label style="display:block;margin:10px 0 6px;font-size:0.8rem;color:rgba(255,255,255,0.7);">Upload CV (PDF or DOCX)</label>
-      <input id="student-cv" type="file" accept=".pdf,.doc,.docx,.txt" />
-
-      <label style="display:block;margin:10px 0 6px;font-size:0.8rem;color:rgba(255,255,255,0.7);">Upload Application Letter (PDF or DOCX)</label>
-      <input id="student-letter" type="file" accept=".pdf,.doc,.docx,.txt" />
-
-      <div id="upload-progress" style="display:none;margin-top:14px;">
-        <div class="main-progress-wrap" style="max-width:none;">
-          <div id="upload-progress-fill" class="main-progress-fill" style="width:0%;"></div>
+        <label style="display:block;margin:10px 0 6px;font-size:0.8rem;color:rgba(255,255,255,0.7);">Upload CV (PDF, DOCX, or JPG)</label>
+        <div class="file-input-row">
+          <input id="student-cv" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" />
+          <button type="button" class="btn btn-secondary btn-sm file-clear-btn" data-target="student-cv" aria-label="Remove CV">×</button>
         </div>
-        <p id="upload-status-text" style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:6px;"></p>
+
+        <label style="display:block;margin:10px 0 6px;font-size:0.8rem;color:rgba(255,255,255,0.7);">Upload Application Letter (PDF, DOCX, or JPG)</label>
+        <div class="file-input-row">
+          <input id="student-letter" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" />
+          <button type="button" class="btn btn-secondary btn-sm file-clear-btn" data-target="student-letter" aria-label="Remove Application Letter">×</button>
+        </div>
+
+        <div id="upload-progress" style="display:none;margin-top:14px;">
+          <div class="main-progress-wrap" style="max-width:none;">
+            <div id="upload-progress-fill" class="main-progress-fill" style="width:0%;"></div>
+          </div>
+          <p id="upload-status-text" style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:6px;"></p>
+        </div>
+
+        <button class="btn btn-primary btn-lg" style="margin-top:14px;" id="continue-btn">Continue to Interview</button>
+        <p id="student-message" style="margin-top:12px;color:#ffb3b3;font-size:0.85rem;"></p>
       </div>
 
-      <button class="btn btn-primary btn-lg" style="margin-top:14px;" id="continue-btn">Continue to Interview</button>
-      <p id="student-message" style="margin-top:12px;color:#ffb3b3;font-size:0.85rem;"></p>
+      <div class="auth-card preview-card">
+        <h2 style="margin-bottom:8px;">Document Preview</h2>
+        <p style="color:rgba(255,255,255,0.65);margin-bottom:18px;">Preview uploaded documents and see file details before you continue.</p>
+        <div id="document-preview" class="document-preview">
+          <div class="preview-actions">
+            <button id="preview-button-cv" class="btn btn-secondary btn-sm active">View CV</button>
+            <button id="preview-button-letter" class="btn btn-secondary btn-sm">View Application Letter</button>
+          </div>
+          <div id="preview-content" class="preview-content">
+            <div class="preview-placeholder">Upload a supported file and select a document to preview it here.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </main>
@@ -65,6 +87,9 @@
   const $ = id => document.getElementById(id);
   let currentUser = null;
   let currentProfile = null;
+  let lastPreviewFile = null;
+  let currentPreviewUrl = null;
+  let selectedPreviewType = 'cv';
 
   // --- Auth guard: only signed-in students may see this page ---
   onAuthStateChanged(auth, async (user) => {
@@ -82,8 +107,66 @@
     currentProfile = profile;
     $("student-name-badge").textContent = `${profile.firstName || ""} ${profile.lastName || ""}`.trim();
     $("loading-view").style.display = "none";
-    $("upload-view").style.display = "block";
+    $("student-layout").style.display = "grid";
+    updatePreview();
   });
+
+  $("student-cv").addEventListener("change", () => {
+    selectedPreviewType = 'cv';
+    switchPreviewButton('cv');
+    updatePreview();
+  });
+  $("student-letter").addEventListener("change", () => {
+    selectedPreviewType = 'letter';
+    switchPreviewButton('letter');
+    updatePreview();
+  });
+
+  document.querySelectorAll('.file-clear-btn').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const targetId = event.currentTarget.dataset.target;
+      const input = $(targetId);
+      if (!input) return;
+      input.value = '';
+      if (selectedPreviewType === 'cv' && targetId === 'student-cv') {
+        selectedPreviewType = 'letter';
+      } else if (selectedPreviewType === 'letter' && targetId === 'student-letter') {
+        selectedPreviewType = 'cv';
+      }
+      switchPreviewButton(selectedPreviewType);
+      updatePreview();
+    });
+  });
+
+  $("preview-button-cv").addEventListener("click", () => {
+    selectedPreviewType = 'cv';
+    switchPreviewButton('cv');
+    updatePreview();
+  });
+  $("preview-button-letter").addEventListener("click", () => {
+    selectedPreviewType = 'letter';
+    switchPreviewButton('letter');
+    updatePreview();
+  });
+
+  function switchPreviewButton(type) {
+    const cvBtn = $("preview-button-cv");
+    const letterBtn = $("preview-button-letter");
+    cvBtn.classList.toggle('active', type === 'cv');
+    letterBtn.classList.toggle('active', type === 'letter');
+  }
+
+  function getSelectedFile() {
+    return selectedPreviewType === 'letter'
+      ? $("student-letter").files[0]
+      : $("student-cv").files[0];
+  }
+
+  function clearSelectedFile(targetId) {
+    const input = $(targetId);
+    if (!input) return;
+    input.value = '';
+  }
 
   $("logout-btn").addEventListener("click", async () => {
     await signOut(auth);
@@ -146,6 +229,66 @@
     const ref = storageRef(storage, path);
     await uploadBytes(ref, file);
     return getDownloadURL(ref);
+  }
+
+  function updatePreview() {
+    const previewContent = $("preview-content");
+    const cvFile = $("student-cv").files[0];
+    const letterFile = $("student-letter").files[0];
+    const selectedFile = getSelectedFile();
+
+    lastPreviewFile = selectedFile || (selectedPreviewType === 'letter' ? cvFile : letterFile) || cvFile || letterFile || null;
+
+    if (!lastPreviewFile) {
+      if (currentPreviewUrl) {
+        URL.revokeObjectURL(currentPreviewUrl);
+        currentPreviewUrl = null;
+      }
+      previewContent.innerHTML = '<div class="preview-placeholder">Upload a supported file and select a document to preview it here.</div>';
+      return;
+    }
+
+    if (currentPreviewUrl) {
+      URL.revokeObjectURL(currentPreviewUrl);
+      currentPreviewUrl = null;
+    }
+
+    if (lastPreviewFile.type === 'application/pdf') {
+      currentPreviewUrl = URL.createObjectURL(lastPreviewFile);
+      previewContent.innerHTML = `<iframe src="${currentPreviewUrl}" title="Document preview"></iframe>`;
+    } else if (lastPreviewFile.type.startsWith('text/')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        previewContent.innerHTML = `<pre style="white-space:pre-wrap;word-break:break-word;font-size:0.92rem;line-height:1.5;color:#f8fbff;">${escapeHtml(reader.result)}</pre>`;
+      };
+      reader.readAsText(lastPreviewFile);
+    } else if (lastPreviewFile.type.startsWith('image/')) {
+      currentPreviewUrl = URL.createObjectURL(lastPreviewFile);
+      previewContent.innerHTML = `<img src="${currentPreviewUrl}" alt="Document preview" style="width:100%;height:auto;border-radius:16px;object-fit:contain;">`;
+    } else {
+      currentPreviewUrl = URL.createObjectURL(lastPreviewFile);
+      previewContent.innerHTML = `
+        <div class="preview-placeholder" style="text-align:left;">
+          <strong>Selected file:</strong><br/>
+          ${escapeHtml(lastPreviewFile.name)}<br/>
+          <span style="color:rgba(255,255,255,0.75);">This file cannot be rendered directly in the browser.</span>
+          <div style="margin-top:16px;">
+            <a href="${currentPreviewUrl}" target="_blank" rel="noreferrer noopener" class="btn btn-secondary btn-sm">Open file</a>
+            <a href="${currentPreviewUrl}" download="${escapeHtml(lastPreviewFile.name)}" class="btn btn-secondary btn-sm" style="margin-left:12px;">Download file</a>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[c]));
   }
 
   function setUploadStatus(pct, text) {
