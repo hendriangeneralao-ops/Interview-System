@@ -201,16 +201,23 @@
       // backend call described in the next slice — see analyzing.js update.
       // For now we save the file references and pending status so that step
       // has something to read.
+      const cvText = await extractTextFromUpload(cvFile);
+      const letterText = await extractTextFromUpload(letterFile);
+
       setUploadStatus(70, "Saving your document references...");
-      await setDoc(doc(db, "students", currentUser.uid), {
+      const studentSession = {
         cvFileName: cvFile.name,
         cvUrl,
+        cvText,
         applicationLetterFileName: letterFile.name,
         applicationLetterUrl: letterUrl,
+        applicationLetterText: letterText,
         program: currentProfile.program || "",
         skillExtractionStatus: "pending",
         updatedAt: new Date().toISOString()
-      }, { merge: true });
+      };
+      await setDoc(doc(db, "students", currentUser.uid), studentSession, { merge: true });
+      localStorage.setItem("bisu-student-session", JSON.stringify(studentSession));
 
       setUploadStatus(100, "Done. Redirecting to the interview...");
       setTimeout(() => window.location.href = "interview.html", 500);
@@ -229,6 +236,20 @@
     const ref = storageRef(storage, path);
     await uploadBytes(ref, file);
     return getDownloadURL(ref);
+  }
+
+  async function extractTextFromUpload(file) {
+    if (!file) return "";
+    const name = (file.name || "").toLowerCase();
+    if (name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.json')) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+        reader.readAsText(file);
+      });
+    }
+    return "";
   }
 
   function updatePreview() {
